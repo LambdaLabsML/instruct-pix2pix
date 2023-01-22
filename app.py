@@ -82,7 +82,7 @@ with gr.Blocks(css="style.css") as demo:
                 <h1>Instruct-Pix2Pix Diffusion</h1>
               </div>
               <p>
-               Demo for Instruct-Pix2Pix Diffusion
+               Demo for Instruct-Pix2Pix Diffusion: https://github.com/timothybrooks/instruct-pix2pix
               </p>
               <p>
                Running on <b>{device}</b>
