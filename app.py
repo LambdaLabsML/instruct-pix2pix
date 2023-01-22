@@ -1,4 +1,4 @@
-from diffusers import DiffusionPipeline
+from diffusers import DiffusionPipeline, EulerAncestralDiscreteScheduler
 import gradio as gr
 import torch
 from PIL import Image
@@ -9,11 +9,15 @@ import random
 
 
 start_time = time.time()
-current_steps = 25
+current_steps = 15
 
-PIPE = DiffusionPipeline.from_pretrained("timbrooks/instruct-pix2pix", torch_dtype=torch.float16, safety_checker=None)
+pipe = DiffusionPipeline.from_pretrained("timbrooks/instruct-pix2pix", torch_dtype=torch.float16, safety_checker=None)
+pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
 
 device = "GPU 🔥" if torch.cuda.is_available() else "CPU 🥶"
+
+if torch.cuda.is_available():
+    pipe = pipe.to("cuda")
 
 
 def error_str(error, title="Error"):
@@ -27,17 +31,15 @@ def error_str(error, title="Error"):
 
 def inference(
     prompt,
-    guidance,
+    text_guidance_scale,
+    image_guidance_scale,
+    image,
     steps,
-    n_images=1,
-    width=512,
-    height=512,
-    seed=0,
-    img=None,
-    strength=0.5,
     neg_prompt="",
+    width=256,
+    height=256,
+    seed=0,
 ):
-
     print(psutil.virtual_memory())  # print memory usage
 
     if seed == 0:
@@ -46,61 +48,23 @@ def inference(
     generator = torch.Generator("cuda").manual_seed(seed)
 
     try:
-        return (
-            img_to_img(
-                prompt,
-                n_images,
-                neg_prompt,
-                img,
-                strength,
-                guidance,
-                steps,
-                width,
-                height,
-                generator,
-                seed,
-            ),
-            f"Done. Seed: {seed}",
+        ratio = min(height / image.height, width / image.width)
+        image = image.resize((int(image.width * ratio), int(image.height * ratio)), Image.LANCZOS)
+
+        result = pipe(
+            prompt,
+            negative_prompt=neg_prompt,
+            image=image,
+            num_inference_steps=int(steps),
+            image_guidance_scale=image_guidance_scale,
+            guidance_scale=text_guidance_scale,
+            generator=generator,
         )
+
+        # return replace_nsfw_images(result)
+        return result.images, f"Done. Seed: {seed}"
     except Exception as e:
         return None, error_str(e)
-
-
-def img_to_img(
-    prompt,
-    n_images,
-    neg_prompt,
-    img,
-    strength,
-    guidance,
-    steps,
-    width,
-    height,
-    generator,
-    seed,
-):
-    pipe = PIPE
-
-    if torch.cuda.is_available():
-        pipe = pipe.to("cuda")
-        pipe.enable_xformers_memory_efficient_attention()
-
-    ratio = min(height / img.height, width / img.width)
-    img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
-
-    result = pipe(
-        prompt,
-        negative_prompt=neg_prompt,
-        num_images_per_prompt=n_images,
-        image=img,
-        num_inference_steps=int(steps),
-        strength=strength,
-        guidance_scale=guidance,
-        generator=generator,
-    )
-
-    # return replace_nsfw_images(result)
-    return result.images
 
 
 def replace_nsfw_images(results):
@@ -170,9 +134,6 @@ with gr.Blocks(css="style.css") as demo:
                     )
 
                     with gr.Row():
-                        guidance = gr.Slider(
-                            label="Guidance scale", value=7.5, maximum=15
-                        )
                         steps = gr.Slider(
                             label="Steps",
                             value=current_steps,
@@ -197,25 +158,27 @@ with gr.Blocks(css="style.css") as demo:
                     image = gr.Image(
                         label="Image", height=256, tool="editor", type="pil"
                     )
-                    strength = gr.Slider(
-                        label="Transformation strength",
-                        minimum=0,
-                        maximum=1,
-                        step=0.01,
-                        value=0.5,
+                    text_guidance_scale = gr.Slider(
+                        label="Text Guidance Scale", minimum=1.0, value=5.5, maximum=15, step=0.1
+                    )
+                    image_guidance_scale = gr.Slider(
+                        label="Image Guidance Scale",
+                        minimum=1.0,
+                        maximum=15,
+                        step=0.1,
+                        value=1.5,
                     )
 
     inputs = [
         prompt,
-        guidance,
+        text_guidance_scale,
+        image_guidance_scale,
+        image,
         steps,
-        n_images,
+        neg_prompt,
         width,
         height,
         seed,
-        image,
-        strength,
-        neg_prompt,
     ]
     outputs = [gallery, error_output]
     prompt.submit(inference, inputs=inputs, outputs=outputs)
@@ -223,7 +186,7 @@ with gr.Blocks(css="style.css") as demo:
 
     ex = gr.Examples(
         [],
-        inputs=[prompt, guidance, steps, neg_prompt],
+        inputs=[prompt, text_guidance_scale, image_guidance_scale, image, steps],
         outputs=outputs,
         fn=inference,
         cache_examples=True,
