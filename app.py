@@ -83,7 +83,6 @@ def img_to_img(
 
     if torch.cuda.is_available():
         pipe = pipe.to("cuda")
-        pipe.enable_xformers_memory_efficient_attention()
 
     ratio = min(height / img.height, width / img.width)
     img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
