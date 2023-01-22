@@ -1,6 +1,6 @@
 ---
 title: Instruct Pix2Pix Web-UI
-emoji: 🪄
+emoji: 🎯
 colorFrom: blue
 colorTo: pink
 sdk: gradio
