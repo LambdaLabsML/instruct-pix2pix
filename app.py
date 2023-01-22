@@ -36,8 +36,8 @@ def inference(
     image,
     steps,
     neg_prompt="",
-    width=256,
-    height=256,
+    width=512,
+    height=512,
     seed=0,
 ):
     print(psutil.virtual_memory())  # print memory usage
@@ -79,10 +79,10 @@ with gr.Blocks(css="style.css") as demo:
         f"""
             <div class="finetuned-diffusion-div">
               <div>
-                <h1>Protogen Diffusion</h1>
+                <h1>Instruct-Pix2Pix Diffusion</h1>
               </div>
               <p>
-               Demo for multiple fine-tuned Protogen Stable Diffusion models.
+               Demo for Instruct-Pix2Pix Diffusion
               </p>
               <p>
                Running on <b>{device}</b>
@@ -185,23 +185,11 @@ with gr.Blocks(css="style.css") as demo:
     generate.click(inference, inputs=inputs, outputs=outputs)
 
     ex = gr.Examples(
-        [],
+        ["turn him into a cyborg", 7.5, 1.2, "./statue.jpg", 20],
         inputs=[prompt, text_guidance_scale, image_guidance_scale, image, steps],
         outputs=outputs,
         fn=inference,
         cache_examples=True,
-    )
-
-    gr.HTML(
-        """
-    <div style="border-top: 1px solid #303030;">
-      <br>
-      <p>Models by <a href="https://huggingface.co/darkstorm2150">@darkstorm2150</a> and others. ❤️</p>
-      <p>This space uses the <a href="https://github.com/LuChengTHU/dpm-solver">DPM-Solver++</a> sampler by <a href="https://arxiv.org/abs/2206.00927">Cheng Lu, et al.</a>.</p>
-      <p>Space by: Darkstorm (Victor Espinoza)<br>
-      <a href="https://www.instagram.com/officialvictorespinoza/">Instagram</a>
-    </div>
-    """
     )
 
 print(f"Space built in {time.time() - start_time:.2f} seconds")
