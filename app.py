@@ -185,7 +185,9 @@ with gr.Blocks(css="style.css") as demo:
     generate.click(inference, inputs=inputs, outputs=outputs)
 
     ex = gr.Examples(
-        ["turn him into a cyborg", 7.5, 1.2, "./statue.jpg", 20],
+        [
+            ["turn him into a cyborg", 7.5, 1.2, "./statue.jpg", 20]
+        ],
         inputs=[prompt, text_guidance_scale, image_guidance_scale, image, steps],
         outputs=outputs,
         fn=inference,
