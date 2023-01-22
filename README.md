@@ -1,5 +1,5 @@
 ---
-title: Protogen Web-UI
+title: Instruct Pix2Pix Web-UI
 emoji: 🪄
 colorFrom: blue
 colorTo: pink
