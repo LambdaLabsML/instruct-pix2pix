@@ -9,7 +9,7 @@ import random
 
 
 start_time = time.time()
-current_steps = 25
+current_steps = 15
 
 pipe = DiffusionPipeline.from_pretrained("timbrooks/instruct-pix2pix", torch_dtype=torch.float16, safety_checker=None)
 pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
@@ -168,9 +168,6 @@ with gr.Blocks(css="style.css") as demo:
                     )
 
                     with gr.Row():
-                        guidance = gr.Slider(
-                            label="Guidance scale", value=7.5, maximum=15
-                        )
                         steps = gr.Slider(
                             label="Steps",
                             value=current_steps,
@@ -195,17 +192,20 @@ with gr.Blocks(css="style.css") as demo:
                     image = gr.Image(
                         label="Image", height=256, tool="editor", type="pil"
                     )
+                    text_guidance_scale = gr.Slider(
+                        label="Text Guidance Scale", minimum=1.0, value=5.5, maximum=15, step=0.1
+                    )
                     image_guidance_scale = gr.Slider(
                         label="Image Guidance Scale",
-                        minimum=1,
-                        maximum=10,
-                        step=0.2,
-                        value=1,
+                        minimum=1.0,
+                        maximum=15,
+                        step=0.1,
+                        value=1.5,
                     )
 
     inputs = [
         prompt,
-        guidance,
+        text_guidance_scale,
         steps,
         n_images,
         width,
