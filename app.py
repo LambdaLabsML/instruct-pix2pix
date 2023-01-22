@@ -1,4 +1,4 @@
-from diffusers import DiffusionPipeline
+from diffusers import DiffusionPipeline, EulerAncestralDiscreteScheduler
 import gradio as gr
 import torch
 from PIL import Image
@@ -11,9 +11,13 @@ import random
 start_time = time.time()
 current_steps = 25
 
-PIPE = DiffusionPipeline.from_pretrained("timbrooks/instruct-pix2pix", torch_dtype=torch.float16, safety_checker=None)
+pipe = DiffusionPipeline.from_pretrained("timbrooks/instruct-pix2pix", torch_dtype=torch.float16, safety_checker=None)
+pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
 
 device = "GPU 🔥" if torch.cuda.is_available() else "CPU 🥶"
+
+if torch.cuda.is_available():
+    pipe = pipe.to("cuda")
 
 
 def error_str(error, title="Error"):
@@ -71,7 +75,7 @@ def img_to_img(
     n_images,
     neg_prompt,
     img,
-    strength,
+    image_guidance_scale,
     guidance,
     steps,
     width,
@@ -79,11 +83,6 @@ def img_to_img(
     generator,
     seed,
 ):
-    pipe = PIPE
-
-    if torch.cuda.is_available():
-        pipe = pipe.to("cuda")
-
     ratio = min(height / img.height, width / img.width)
     img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
 
@@ -93,7 +92,7 @@ def img_to_img(
         num_images_per_prompt=n_images,
         image=img,
         num_inference_steps=int(steps),
-        strength=strength,
+        image_guidance_scale=image_guidance_scale,
         guidance_scale=guidance,
         generator=generator,
     )
@@ -196,12 +195,12 @@ with gr.Blocks(css="style.css") as demo:
                     image = gr.Image(
                         label="Image", height=256, tool="editor", type="pil"
                     )
-                    strength = gr.Slider(
-                        label="Transformation strength",
-                        minimum=0,
-                        maximum=1,
-                        step=0.01,
-                        value=0.5,
+                    image_guidance_scale = gr.Slider(
+                        label="Image Guidance Scale",
+                        minimum=1,
+                        maximum=10,
+                        step=0.2,
+                        value=1,
                     )
 
     inputs = [
@@ -213,7 +212,7 @@ with gr.Blocks(css="style.css") as demo:
         height,
         seed,
         image,
-        strength,
+        image_guidance_scale,
         neg_prompt,
     ]
     outputs = [gallery, error_output]
