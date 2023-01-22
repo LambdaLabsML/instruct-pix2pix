@@ -5,12 +5,12 @@ from PIL import Image
 import time
 import psutil
 import random
-from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
+# from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
 
 
 start_time = time.time()
 current_steps = 25
-        
+
 PIPE = DiffusionPipeline.from_pretrained("timbrooks/instruct-pix2pix", torch_dtype=torch.float16, safety_checker=None)
 
 device = "GPU 🔥" if torch.cuda.is_available() else "CPU 🥶"
@@ -26,7 +26,6 @@ def error_str(error, title="Error"):
 
 
 def inference(
-    model_name,
     prompt,
     guidance,
     steps,
@@ -49,7 +48,6 @@ def inference(
     try:
         return (
             img_to_img(
-                model_name,
                 prompt,
                 n_images,
                 neg_prompt,
@@ -69,7 +67,6 @@ def inference(
 
 
 def img_to_img(
-    model_name,
     prompt,
     n_images,
     neg_prompt,
@@ -134,11 +131,6 @@ with gr.Blocks(css="style.css") as demo:
     with gr.Row():
         with gr.Column(scale=55):
             with gr.Group():
-                model_name = gr.Dropdown(
-                    label="Model",
-                    choices=[m.name for m in models],
-                    value=models[0].name,
-                )
                 with gr.Box(visible=False) as custom_model_group:
                     gr.HTML(
                         "<div><font size='2'>Custom models have to be downloaded first, so give it some time.</font></div>"
@@ -189,6 +181,14 @@ with gr.Blocks(css="style.css") as demo:
                             step=1,
                         )
 
+                    with gr.Row():
+                        width = gr.Slider(
+                            label="Width", value=512, minimum=64, maximum=1024, step=8
+                        )
+                        height = gr.Slider(
+                            label="Height", value=512, minimum=64, maximum=1024, step=8
+                        )
+
                     seed = gr.Slider(
                         0, 2147483647, label="Seed (0 = random)", value=0, step=1
                     )
@@ -206,7 +206,6 @@ with gr.Blocks(css="style.css") as demo:
                     )
 
     inputs = [
-        model_name,
         prompt,
         guidance,
         steps,
@@ -224,7 +223,7 @@ with gr.Blocks(css="style.css") as demo:
 
     ex = gr.Examples(
         [],
-        inputs=[model_name, prompt, guidance, steps, neg_prompt],
+        inputs=[prompt, guidance, steps, neg_prompt],
         outputs=outputs,
         fn=inference,
         cache_examples=True,
