@@ -206,15 +206,15 @@ with gr.Blocks(css="style.css") as demo:
 print(f"Space built in {time.time() - start_time:.2f} seconds")
 
 # without rayserve
-# demo.queue(concurrency_count=1)
-# demo.launch()
+demo.queue(concurrency_count=1, max_size=4)
+demo.launch(server_port=8266)
 
-# With rayserve
-num_replicas = (
-    os.getenv("DEMO_NUM_REPLICAS")
-    if "DEMO_NUM_REPLICAS" in os.environ
-    else torch.cuda.device_count()
-)
-app = GradioServer.options(
-    num_replicas=num_replicas, ray_actor_options={"num_gpus": 1.0, "num_cpus": 16.0}
-).bind(demo)
+# # With rayserve
+# num_replicas = (
+#     os.getenv("DEMO_NUM_REPLICAS")
+#     if "DEMO_NUM_REPLICAS" in os.environ
+#     else torch.cuda.device_count()
+# )
+# app = GradioServer.options(
+#     num_replicas=num_replicas, ray_actor_options={"num_gpus": 1.0, "num_cpus": 16.0}
+# ).bind(demo)
